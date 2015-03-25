@@ -8,6 +8,38 @@ class Matrix:
         self.col = m
         self.arr = [[0 for x in range(n)] for x in range(m)]
 
+    def solve_system_for_triangular_matrix(self, b):
+        solutions = [0] * self.row
+        if self.arr[0][self.col - 1] == 0: #upper-triangular
+            for i in range(self.row):
+                row_sum = 0
+                for j in range(self.col):
+                    if i == 0 and j == 0:
+                        solutions[i] = b[i] / self.arr[i][j]
+                    else:
+                        if j < i:
+                            row_sum += solutions[j] * self.arr[i][j]
+                        elif j == i:
+                            rhs = b[i] - row_sum
+                            new_solution = rhs / self.arr[i][j]
+                            solutions[i] = new_solution
+        elif self.arr[self.row - 1][0] == 0: #lower-triangular
+            for i in range(self.row - 1, -1, -1):
+                row_sum = 0
+                for j in range(self.col - 1, -1, -1):
+                    if i == self.row - 1 and j == self.col - 1:
+                        solutions[i] = b[i] / self.arr[i][j]
+                    else:
+                        if j > i:
+                            row_sum += solutions[j] * self.arr[i][j]
+                        elif j == i:
+                            rhs = b[i] - row_sum
+                            new_solution = rhs / self.arr[i][j]
+                            solutions[i] = new_solution
+        for i in range(self.row):
+            solutions[i] = round(solutions[i], 14)
+        return solutions
+
     def init_identity(self):
         for x in range(self.row):
             for y in range(self.col):
@@ -216,10 +248,24 @@ def qr_fact_givens(matrix):
     print("\nError = %f" % error_matrix.inf_norm())
     print("------------------------------------------------------------\n")
     
+def solve_lu_b(A, L, U, b):
+    L_sol = L.solve_system_for_triangular_matrix(b)
+    U_sol = U.solve_system_for_triangular_matrix(L_sol)
+    print("Using LU factorization to solve Ax = b for:")
+    print("A =")
+    A.print()
+    print("b =")
+    print("\t", end="")
+    pprint(b)
+    print("\nYields solution:")
+    print("\t", end="")
+    pprint(U_sol)
+    print()
 
-matrix = Matrix(3, 3)
-matrix.arr = [[1, 2, 0], [1, 1, 1], [2, 1, 0]]
+matrix = Matrix(4, 4)
+matrix.arr = [[1, 1, -1, 5], [1, -2, 3, 7], [2, 3, 1, 8], [5, 3, -1, 15]]
 LU = lu_fact(matrix)
-qr_fact_househ(matrix)
-qr_fact_givens(matrix)
+solve_lu_b(matrix, LU[0], LU[1], [4, -6, 7, 77])
+#qr_fact_househ(matrix)
+#qr_fact_givens(matrix)
 
