@@ -61,8 +61,6 @@ class Matrix:
         for i in range(self.row):
             for j in range(self.col):
                 self.arr[i][j] = round(self.arr[i][j], 14)
-                if self.arr[i][j] == -0:
-                    self.arr[i][j] = 0
 
     def print(self):
         for i in range(self.row):
@@ -182,9 +180,7 @@ def qr_fact_givens(matrix):
     Q = Matrix(matrix.row, matrix.col)
     Q.init_identity()
     R = copy.deepcopy(matrix)
-
     k = 1
-    count = 0
     for j in range(matrix.col - 1):
         for i in range(k, matrix.row):
             top_entry = R.arr[k - 1][j]
@@ -195,13 +191,13 @@ def qr_fact_givens(matrix):
             Gi = Matrix(matrix.row, matrix.col)
             Gi.init_identity()
             Gi.arr[k - 1][j] = c
-            Gi.arr[j][i] = s
             Gi.arr[i][j] = -s
+            Gi.arr[j][i] = s
             Gi.arr[i][i] = c
             R = Gi.multiply(R)
-            R.round()
             Q = Q.multiply(Gi.transpose())
             Q.round()
+            R.round()
         k += 1
     print("------------------------Givens QR---------------------------")
     print("A =")
@@ -217,8 +213,8 @@ def qr_fact_givens(matrix):
     print("------------------------------------------------------------\n")
     
 
-matrix = Matrix(3, 3)
-matrix.arr = [[1, 2, 0], [1, 1, 1], [2, 1, 0]]
+matrix = Matrix(4, 4)
+matrix.arr = [[1, 2, 0, 3], [1, 1, 1, 5], [2, 1, 0, 6], [7, -5, 31, 11]]
 LU = lu_fact(matrix)
 qr_fact_househ(matrix)
 qr_fact_givens(matrix)
