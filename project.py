@@ -8,6 +8,38 @@ class Matrix:
         self.col = m
         self.arr = [[0 for x in range(n)] for x in range(m)]
 
+    def solve_system_for_triangular_matrix(self, b):
+        solutions = Vector(self.row)
+        if self.arr[0][self.col - 1] == 0: #upper-triangular
+            for i in range(self.row):
+                row_sum = 0
+                for j in range(self.col):
+                    if i == 0 and j == 0:
+                        solutions.arr[i] = b.arr[i] / self.arr[i][j]
+                    else:
+                        if j < i:
+                            row_sum += solutions.arr[j] * self.arr[i][j]
+                        elif j == i:
+                            rhs = b.arr[i] - row_sum
+                            new_solution = rhs / self.arr[i][j]
+                            solutions.arr[i] = new_solution
+        elif self.arr[self.row - 1][0] == 0: #lower-triangular
+            for i in range(self.row - 1, -1, -1):
+                row_sum = 0
+                for j in range(self.col - 1, -1, -1):
+                    if i == self.row - 1 and j == self.col - 1:
+                        solutions.arr[i] = b.arr[i] / self.arr[i][j]
+                    else:
+                        if j > i:
+                            row_sum += solutions.arr[j] * self.arr[i][j]
+                        elif j == i:
+                            rhs = b.arr[i] - row_sum
+                            new_solution = rhs / self.arr[i][j]
+                            solutions.arr[i] = new_solution
+        for i in range(self.row):
+            solutions.arr[i] = round(solutions.arr[i], 14)
+        return solutions
+
     def init_identity(self):
         for x in range(self.row):
             for y in range(self.col):
@@ -29,6 +61,13 @@ class Matrix:
             for j in range(len(other.arr[0])):
                 for k in range(len(other.arr)):
                     result.arr[i][j] += self.arr[i][k] * other.arr[k][j]
+        return result
+
+    def  multiply_by_vector(self, vector):
+        result = Vector(self.row)
+        for i in range(self.row):
+            for j in range(self.col):
+                result.arr[i] += self.arr[i][j] * vector.arr[j]
         return result
 
     def multiply_by_scalar(self, scalar):
@@ -57,6 +96,12 @@ class Matrix:
             norm = curr_sum if (curr_sum > norm) else norm
         return norm
 
+    def get_vector_at(self, k):
+        v = Vector(self.row)
+        for i in range(self.row):
+            v.arr[i] = matrix.arr[i][k]
+        return v
+
     def round(self):
         for i in range(self.row):
             for j in range(self.col):
@@ -79,10 +124,8 @@ class Matrix:
         print()
 
 class Vector:
-    def __init__(self, matrix, k):
-        self.arr = []
-        for i in range(matrix.row):
-            self.arr.append(matrix.arr[i][k])
+    def __init__(self, n):
+        self.arr = [0] * n
 
     def norm(self):
         sum_of_squares = 0
@@ -136,7 +179,7 @@ def qr_fact_househ(matrix):
     Q.init_identity()
     R = copy.deepcopy(matrix)
     for k in range(matrix.row - 1):
-        a_i = Vector(R, k)
+        a_i = R.get_vector_at(k)
         if (k > 0):
             for row_element in range(k):
                 a_i.arr.pop(0)
@@ -175,6 +218,7 @@ def qr_fact_househ(matrix):
     error_matrix = Q.multiply(R).subtract(matrix)
     print("\nError = %f" % error_matrix.inf_norm())
     print("------------------------------------------------------------\n")
+    return Q, R
 
 def qr_fact_givens(matrix):
     Q = Matrix(matrix.row, matrix.col)
@@ -211,11 +255,57 @@ def qr_fact_givens(matrix):
     error_matrix = Q.multiply(R).subtract(matrix)
     print("\nError = %f" % error_matrix.inf_norm())
     print("------------------------------------------------------------\n")
+    return Q, R
     
+def solve_lu_b(original, L, U, b):
+    L_sol = L.solve_system_for_triangular_matrix(b)
+    U_sol = U.solve_system_for_triangular_matrix(L_sol)
+    print("------------------------------------------------------------")
+    print("Using LU factorization to solve Ax = b for x:")
+    print("A =")
+    original.print()
+    print("b =")
+    print("\t", end="")
+    pprint(b.arr)
+    print("Result:")
+    print("Ly = b:")
+    print(" y = ", end="")
+    pprint(L_sol.arr)
+    print("     via forward substitution")
+    print("\nUx = y:")
+    print(" x = ", end="")
+    pprint(U_sol.arr)
+    print("     via backward substitution")
+    print("------------------------------------------------------------")
+    print()
+
+def solve_qr_b(original, Q, R, b):
+    Q_transpose_b = Q.transpose().multiply_by_vector(b)
+    final_sol = R.solve_system_for_triangular_matrix(Q_transpose_b)
+    print("------------------------------------------------------------")
+    print("QR factorization to solve Ax = b for x:")
+    print("A =")
+    original.print()
+    print("b =")
+    print("\t", end="")
+    pprint(b.arr)
+    print("\nResult:\nRx = Q^t b")
+    print("Rx = ", end="")
+    pprint(Q_transpose_b.arr)
+    print("x  = ", end="")
+    pprint(final_sol.arr)
+    print("     via backward substitution")
+    print("------------------------------------------------------------")
+    print()
+
 
 matrix = Matrix(4, 4)
-matrix.arr = [[1, 2, 0, 3], [1, 1, 1, 5], [2, 1, 0, 6], [7, -5, 31, 11]]
+matrix.arr = [[1, 1, -1, 5], [1, -2, 3, 7], [2, 3, 1, 8], [5, 3, -1, 15]]
 LU = lu_fact(matrix)
-qr_fact_househ(matrix)
-qr_fact_givens(matrix)
+QR = qr_fact_givens(matrix)
+b = Vector(matrix.row)
+b.arr = [4, -6, 7, 77]
+solve_lu_b(matrix, LU[0], LU[1], b)
+solve_qr_b(matrix, QR[0], QR[1], b)
+
 
