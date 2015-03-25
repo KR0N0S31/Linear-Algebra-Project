@@ -48,6 +48,14 @@ class Matrix:
                 else:
                     self.arr[x][y] = 0
 
+    def init_Hilbert(self):
+        for x in range(self.row):
+            divisor = x + 1
+            for y in range(self.col):
+                self.arr[x][y] = 1 / divisor
+                divisor += 1
+            
+
     def transpose(self):
         result = Matrix(self.row, self.col)
         for i in range(self.row):
@@ -206,6 +214,10 @@ def qr_fact_househ(matrix):
         Q = Q.multiply(new_Hi)
         Q.round()
         R.round()
+        #Q.print()
+        #R.print()
+        #new_Hi.print()
+        print()
     print("-----------------------Householder QR-----------------------")
     print("A =")
     matrix.print()
@@ -298,14 +310,28 @@ def solve_qr_b(original, Q, R, b):
     print("------------------------------------------------------------")
     print()
 
+def hilbert_routine():
+    n = 4
+    H = Matrix(n, n)
+    H.init_Hilbert()
+    entry = 0.1 ** (n / 3)
+    b = Vector(n)
+    arr = [0] * n
+    for i in range(n):
+        arr[i] = entry
+    b.arr = arr
+    #LU = lu_fact(H)
+    QR = qr_fact_househ(H)
+    #QR = qr_fact_givens(H)
 
 matrix = Matrix(4, 4)
 matrix.arr = [[1, 1, -1, 5], [1, -2, 3, 7], [2, 3, 1, 8], [5, 3, -1, 15]]
-LU = lu_fact(matrix)
-QR = qr_fact_givens(matrix)
-b = Vector(matrix.row)
-b.arr = [4, -6, 7, 77]
-solve_lu_b(matrix, LU[0], LU[1], b)
-solve_qr_b(matrix, QR[0], QR[1], b)
+##LU = lu_fact(matrix)
+##QR = qr_fact_givens(matrix)
+##b = Vector(matrix.row)
+##b.arr = [4, -6, 7, 77]
+##solve_lu_b(matrix, LU[0], LU[1], b)
+##solve_qr_b(matrix, QR[0], QR[1], b)
+hilbert_routine()
 
 
