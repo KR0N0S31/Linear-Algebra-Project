@@ -107,7 +107,7 @@ class Matrix:
     def get_vector_at(self, k):
         v = Vector(self.row)
         for i in range(self.row):
-            v.arr[i] = matrix.arr[i][k]
+            v.arr[i] = self.arr[i][k]
         return v
 
     def round(self):
@@ -119,21 +119,26 @@ class Matrix:
         for i in range(self.row):
             for j in range(self.col):        
                 if i == 0 and j == 0:
-                    print("       [[%10.5f" % (self.arr[i][j]), sep="", end=" ")
+                    print("       [[%10.7f" % (self.arr[i][j]), sep="", end=" ")
                 elif j == 0:
-                    print("\t[%10.5f" % (self.arr[i][j]), sep="", end=" ")
+                    print("\t[%10.7f" % (self.arr[i][j]), sep="", end=" ")
                 elif j == self.col - 1:
                     if i == self.row - 1:
-                        print("%12.5f]]" % (self.arr[i][j]), sep="", end=" ")
+                        print("%12.7f]]" % (self.arr[i][j]), sep="", end=" ")
                     else:
-                        print("%12.5f]" % (self.arr[i][j]), sep="")
+                        print("%12.7f]" % (self.arr[i][j]), sep="")
                 else:
-                    print("%12.5f" % (self.arr[i][j]), end="")
+                    print("%12.7f" % (self.arr[i][j]), end="")
         print()
 
 class Vector:
     def __init__(self, n):
         self.arr = [0] * n
+
+    def fill(self, entry):
+        n = len(self.arr)
+        for i in range(n):
+            self.arr[i] = entry
 
     def norm(self):
         sum_of_squares = 0
@@ -147,6 +152,17 @@ class Vector:
             for j in range(len(self.arr)):
                 result.arr[i][j] = self.arr[i] * self.arr[j]
         return result
+
+    def print(self):
+        print("[", end="")
+        for i in range(len(self.arr)):
+            if i == 0:
+                print("%10.7f" % self.arr[i], end="")
+            elif i == len(self.arr) - 1:
+                print("%12.7f" % self.arr[i], end="")
+            else:
+                print("%12.7f," % self.arr[i], end="")
+        print("]")
 
 def lu_fact(matrix):
     L = Matrix(matrix.row, matrix.col)
@@ -210,14 +226,11 @@ def qr_fact_househ(matrix):
                         new_Hi.arr[i][j] = 1
                     else:
                         new_Hi.arr[i][j] = 0
+        
         R = new_Hi.multiply(R)
         Q = Q.multiply(new_Hi)
         Q.round()
         R.round()
-        #Q.print()
-        #R.print()
-        #new_Hi.print()
-        print()
     print("-----------------------Householder QR-----------------------")
     print("A =")
     matrix.print()
@@ -273,39 +286,39 @@ def solve_lu_b(original, L, U, b):
     L_sol = L.solve_system_for_triangular_matrix(b)
     U_sol = U.solve_system_for_triangular_matrix(L_sol)
     print("------------------------------------------------------------")
-    print("Using LU factorization to solve Ax = b for x:")
+    print("LU to solve Ax = b for x:")
     print("A =")
     original.print()
     print("b =")
     print("\t", end="")
-    pprint(b.arr)
+    b.print()
     print("Result:")
     print("Ly = b:")
     print(" y = ", end="")
-    pprint(L_sol.arr)
+    L_sol.print()
     print("     via forward substitution")
     print("\nUx = y:")
     print(" x = ", end="")
-    pprint(U_sol.arr)
+    U_sol.print()
     print("     via backward substitution")
     print("------------------------------------------------------------")
     print()
 
-def solve_qr_b(original, Q, R, b):
+def solve_qr_b(original, Q, R, b, qr_type):
     Q_transpose_b = Q.transpose().multiply_by_vector(b)
     final_sol = R.solve_system_for_triangular_matrix(Q_transpose_b)
     print("------------------------------------------------------------")
-    print("QR factorization to solve Ax = b for x:")
+    print("QR with", qr_type, "to solve Ax = b for x:")
     print("A =")
     original.print()
     print("b =")
     print("\t", end="")
-    pprint(b.arr)
+    b.print()
     print("\nResult:\nRx = Q^t b")
     print("Rx = ", end="")
-    pprint(Q_transpose_b.arr)
+    Q_transpose_b.print()
     print("x  = ", end="")
-    pprint(final_sol.arr)
+    final_sol.print()
     print("     via backward substitution")
     print("------------------------------------------------------------")
     print()
@@ -316,18 +329,18 @@ def hilbert_routine():
     H.init_Hilbert()
     entry = 0.1 ** (n / 3)
     b = Vector(n)
-    arr = [0] * n
-    for i in range(n):
-        arr[i] = entry
-    b.arr = arr
-    #LU = lu_fact(H)
+    b.fill(entry)
+    LU = lu_fact(H)
+    solve_lu_b(H, LU[0], LU[1], b)
     QR = qr_fact_househ(H)
-    #QR = qr_fact_givens(H)
+    solve_qr_b(H, QR[0], QR[1], b, "Householder")
+    QR = qr_fact_givens(H)
+    solve_qr_b(H, QR[0], QR[1], b, "Givens")
 
-matrix = Matrix(4, 4)
-matrix.arr = [[1, 1, -1, 5], [1, -2, 3, 7], [2, 3, 1, 8], [5, 3, -1, 15]]
+matrix = Matrix(3, 3)
+matrix.arr = [[1, 2, 3], [0, 3, 2], [2, 0, 1]]
 ##LU = lu_fact(matrix)
-##QR = qr_fact_givens(matrix)
+##QR = qr_fact_househ(matrix)
 ##b = Vector(matrix.row)
 ##b.arr = [4, -6, 7, 77]
 ##solve_lu_b(matrix, LU[0], LU[1], b)
