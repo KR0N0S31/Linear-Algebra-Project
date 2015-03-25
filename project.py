@@ -16,6 +16,13 @@ class Matrix:
                 else:
                     self.arr[x][y] = 0
 
+    def transpose(self):
+        result = Matrix(self.row, self.col)
+        for i in range(self.row):
+            for j in range(self.col):
+                result.arr[j][i] = self.arr[i][j]
+        return result
+
     def multiply(self, other):
         result = Matrix(self.row, other.col)
         for i in range(len(self.arr)):
@@ -129,7 +136,6 @@ def lu_fact(matrix):
 def qr_fact_househ(matrix):
     Q = Matrix(matrix.row, matrix.col)
     Q.init_identity()
-    R = Matrix(matrix.row, matrix.col)
     R = copy.deepcopy(matrix)
     for k in range(matrix.row - 1):
         a_i = Vector(R, k)
@@ -172,8 +178,48 @@ def qr_fact_househ(matrix):
     print("\nError = %f" % error_matrix.inf_norm())
     print("------------------------------------------------------------\n")
 
-matrix = Matrix(4, 4)
-matrix.arr = [[12, -51, 4, 101], [6, 167, -68, 31], [-4, 24, -41, 32], [7, 89, -31, 4]]
+def qr_fact_givens(matrix):
+    Q = Matrix(matrix.row, matrix.col)
+    Q.init_identity()
+    R = copy.deepcopy(matrix)
+
+    k = 1
+    count = 0
+    for j in range(matrix.col - 1):
+        for i in range(k, matrix.row):
+            top_entry = R.arr[k - 1][j]
+            bottom_entry = R.arr[i][j]
+            denom = math.sqrt(top_entry ** 2 + bottom_entry ** 2)
+            c = top_entry / denom
+            s = bottom_entry / denom
+            Gi = Matrix(matrix.row, matrix.col)
+            Gi.init_identity()
+            Gi.arr[k - 1][j] = c
+            Gi.arr[j][i] = s
+            Gi.arr[i][j] = -s
+            Gi.arr[i][i] = c
+            R = Gi.multiply(R)
+            R.round()
+            Q = Q.multiply(Gi.transpose())
+            Q.round()
+        k += 1
+    print("------------------------Givens QR---------------------------")
+    print("A =")
+    matrix.print()
+    print("Q =")
+    Q.print()
+    print("R =")
+    R.print()
+    print("Q * R =")
+    Q.multiply(R).print()
+    error_matrix = Q.multiply(R).subtract(matrix)
+    print("\nError = %f" % error_matrix.inf_norm())
+    print("------------------------------------------------------------\n")
+    
+
+matrix = Matrix(3, 3)
+matrix.arr = [[1, 2, 0], [1, 1, 1], [2, 1, 0]]
 LU = lu_fact(matrix)
 qr_fact_househ(matrix)
+qr_fact_givens(matrix)
 
