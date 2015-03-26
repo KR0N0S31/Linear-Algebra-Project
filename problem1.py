@@ -84,6 +84,8 @@ class Matrix:
                 self.arr[i][j] *= scalar
 
     def divide_by_scalar(self, scalar):
+        if scalar == 0:
+            return
         for i in range(self.row):
             for j in range(self.col):
                 self.arr[i][j] /= scalar
@@ -324,27 +326,19 @@ def solve_qr_b(original, Q, R, b, qr_type):
     print()
 
 def hilbert_routine():
-    n = 4
-    H = Matrix(n, n)
-    H.init_Hilbert()
-    entry = 0.1 ** (n / 3)
-    b = Vector(n)
-    b.fill(entry)
-    LU = lu_fact(H)
-    solve_lu_b(H, LU[0], LU[1], b)
-    QR = qr_fact_househ(H)
-    solve_qr_b(H, QR[0], QR[1], b, "Householder")
-    QR = qr_fact_givens(H)
-    solve_qr_b(H, QR[0], QR[1], b, "Givens")
+    for n in range(2, 21):
+        H = Matrix(n, n)
+        H.init_Hilbert()
+        entry = 0.1 ** (n / 3)
+        b = Vector(n)
+        b.fill(entry)
+        LU = lu_fact(H)
+        solve_lu_b(H, LU[0], LU[1], b)
+        QR = qr_fact_househ(H)
+        solve_qr_b(H, QR[0], QR[1], b, "Householder")
+        QR = qr_fact_givens(H)
+        solve_qr_b(H, QR[0], QR[1], b, "Givens")
 
-matrix = Matrix(3, 3)
-matrix.arr = [[1, 2, 3], [0, 3, 2], [2, 0, 1]]
-##LU = lu_fact(matrix)
-##QR = qr_fact_househ(matrix)
-##b = Vector(matrix.row)
-##b.arr = [4, -6, 7, 77]
-##solve_lu_b(matrix, LU[0], LU[1], b)
-##solve_qr_b(matrix, QR[0], QR[1], b)
 hilbert_routine()
 
 
