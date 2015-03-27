@@ -1,4 +1,5 @@
 import random
+import copy
 from pprint import pprint
 
 class Matrix:
@@ -6,10 +7,17 @@ class Matrix:
         self.row = n
         self.col = m
         self.mat = [[0 for y in range(self.col)] for x in range(self.row)]
-        self.b   = [0] * self.row
+        self.b   = Vector(self.row)
 
     def augment_with(self, b):
         self.b = b
+
+    def crop(self, n, m):
+        result = Matrix(n, m)
+        for i in range(n):
+            for j in range(m):
+                result.mat[i][j] = self.mat[i][j]
+        return result
 
 class Vector:
     def __init__(self, n):
@@ -17,11 +25,22 @@ class Vector:
         self.col = 1
         self.arr = [0] * n
 
+    def print_as_bits(self):
+        print("[", end="")
+        for i in range(self.row):
+            if i == self.row - 1:
+                print("%d" % self.arr[i], end="")
+            else:
+                print("%d," % self.arr[i], end=" ")
+        print("]")
+
 class ConvolutionalMatrix:
     def __init__(self, n):
         self.n = n
         self.row = self.n + 3
         self.col = self.n
+        self.A0 = Matrix(self.row, self.col)
+        self.A1 = Matrix(self.row, self.col)
 
     def gen_random_x_stream(self):
         binary_stream = Vector(self.n)
@@ -31,25 +50,23 @@ class ConvolutionalMatrix:
         return binary_stream
 
     def gen_y_stream(self, x_stream):
-        A0 = Matrix(self.row, self.col)
-        A1 = Matrix(self.row, self.col)
         jth_pos = 0
         # Generate A0 and A1 simultaneously
         for x in range(self.row):
             for y in range(self.col):
                 # Formula for generating A0
                 if y == jth_pos or y == jth_pos - 2 or y == jth_pos - 3:
-                    A0.mat[x][y] = 1
+                    self.A0.mat[x][y] = 1
                 else:
-                    A0.mat[x][y] = 0
+                    self.A0.mat[x][y] = 0
                 # Formula for generating A1
                 if y == jth_pos or y == jth_pos - 1 or y == jth_pos - 3:
-                    A1.mat[x][y] = 1
+                    self.A1.mat[x][y] = 1
                 else:
-                    A1.mat[x][y] = 0
+                    self.A1.mat[x][y] = 0
             jth_pos += 1
-        y0 = self.multiply_binary_matrix_by_vector(A0, x_stream)
-        y1 = self.multiply_binary_matrix_by_vector(A1, x_stream)
+        y0 = self.multiply_binary_matrix_by_vector(self.A0, x_stream)
+        y1 = self.multiply_binary_matrix_by_vector(self.A1, x_stream)
         y  = self.merge_y0_with_y1(y0, y1)
         return y
 
@@ -68,54 +85,111 @@ class ConvolutionalMatrix:
             y.arr[x] = concat
         return y
 
-def jacobi(matrix, initial_guess, tol):
+    def decode_y_stream(self, y_stream):
+        # The x byte stream can be derived from either A0|y0 or A1|y1
+        # A0 needs to be an n x (n + 1) matrix so it needs to be "cropped"
+        # y0 also needs to be "cropped"
+        cropped_y0 = Vector(self.col)
+        for i in range(self.col):
+            y_str = y_stream.arr[i]
+            y0_num = y_str[0]
+            cropped_y0.arr[i] = float(y0_num)
+        cropped_A0 = self.A0.crop(self.col, self.col)
+        cropped_A0.augment_with(cropped_y0)
+        v = Vector(self.col)
+        gauss_seidel(cropped_A0, v, 0.0001, 1)
+        jacobi(cropped_A0, v, 0.0001, 1)
+        
+def jacobi(matrix, current_guess, tol, decode_binary_stream):
     A = matrix.mat
     b = matrix.b
-    iterations = Vector(matrix.row)
+    new_guess = Vector(matrix.row)
     xi = 0
-    for k in range(20):
+    num_iteration = 0
+    current_error_tol = float("inf")
+    while (current_error_tol > tol):
         for i in range(matrix.row):
             for j in range(matrix.col):
                 if j == xi:
-                    iterations.arr[i] += b[i] / A[i][xi]
-                    iterations.arr[i] = round(iterations.arr[i], 14)
+                    new_guess.arr[i] += b.arr[i] / A[i][xi]
+                    new_guess.arr[i] = round(new_guess.arr[i], 14)
+                    if decode_binary_stream:
+                        new_guess.arr[i] %= 2
                 else:
-                    iterations.arr[i] += (-A[i][j] * initial_guess[j]) / A[i][xi]
-                    iterations.arr[i] = round(iterations.arr[i], 14)
-            xi = (xi + 1) % matrix.row
-        pprint(iterations.arr)
-        initial_guess = iterations.arr
-        iterations.arr = [0] * matrix.row
+                    new_guess.arr[i] += (-A[i][j] * current_guess.arr[j]) / A[i][xi]
+                    new_guess.arr[i] = round(new_guess.arr[i], 14)
+                    if decode_binary_stream:
+                        new_guess.arr[i] %= 2
+            xi = (xi + 1) % matrix.col
+        current_error_tol = get_error_tolerance(new_guess, current_guess)
+        current_guess.arr = new_guess.arr
+        new_guess.arr = [0] * matrix.row
+        num_iteration += 1
+    if decode_binary_stream:
+        print("Jacobi solution:", end=" ")
+        current_guess.print_as_bits()
+    else:
+        print("Iterations using Jacobi: ", num_iteration)
+    return num_iteration
+        
+def gauss_seidel(matrix, current_guess, tol, decode_binary_stream):
+    A = matrix.mat
+    b = matrix.b
+    new_guess = Vector(matrix.row)
+    xi = 0
+    num_iteration = 0
+    current_error_tol = float("inf")
+    while (current_error_tol > tol):
+        # Current iteration before changes to accurately compute error
+        _current_guess = copy.deepcopy(current_guess) 
+        for i in range(matrix.row):
+            for j in range(matrix.col):
+                if j == xi:
+                    new_guess.arr[i] += b.arr[i] / A[i][xi]
+                    new_guess.arr[i] = round(new_guess.arr[i], 14)
+                    if decode_binary_stream:
+                        new_guess.arr[i] %= 2
+                else:
+                    new_guess.arr[i] += (-A[i][j] * current_guess.arr[j]) / A[i][xi]
+                    new_guess.arr[i] = round(new_guess.arr[i], 14)
+                    if decode_binary_stream:
+                        new_guess.arr[i] %= 2
+                current_guess.arr[i] = new_guess.arr[i]
+            xi = (xi + 1) % matrix.col
+        current_error_tol = get_error_tolerance(new_guess, _current_guess)
+        current_guess.arr = new_guess.arr
+        new_guess.arr = [0] * matrix.row
+        num_iteration += 1
+    if decode_binary_stream:
+        print("Gauss-Seidel solution:", end=" ")
+        current_guess.print_as_bits()
+    else:
+        print("Gauss-Seidel solution:", current_guess.arr)
+    print("Iterations using Gauss-Seidel:", num_iteration)
+    return num_iteration
+        
 
-def gauss_seidel(matrix, initial_guess, tol):
-    A = matrix.mat
-    b = matrix.b
-    iterations = Vector(matrix.row)
-    xi = 0
-    for k in range(20):
-        for i in range(matrix.row):
-            for j in range(matrix.col):
-                if j == xi:
-                    iterations.arr[i] += b[i] / A[i][xi]
-                    iterations.arr[i] = round(iterations.arr[i], 14)
-                else:
-                    iterations.arr[i] += (-A[i][j] * initial_guess[j]) / A[i][xi]
-                    iterations.arr[i] = round(iterations.arr[i], 14)
-                initial_guess[i] = iterations.arr[i]
-            xi = (xi + 1) % matrix.row
-        pprint(iterations.arr)
-        initial_guess = iterations.arr
-        iterations.arr = [0] * matrix.row
+def get_error_tolerance(new, old):
+    # Error defined as ||x^n - x^(n + 1)||
+    error = Vector(new.row)
+    for i in range(new.row):
+        error.arr[i] = abs(old.arr[i] - new.arr[i])
+    return max(error.arr)
     
-c = ConvolutionalMatrix(n = 5)
+c = ConvolutionalMatrix(n = 10)
 x_stream = c.gen_random_x_stream()
+print("x_stream =", x_stream.arr)
+#x_stream.arr = [1, 0, 1, 1, 0]
 y_stream = c.gen_y_stream(x_stream)
-pprint(y_stream.arr)
+c.decode_y_stream(y_stream)
 
-m = Matrix(4, 4)
-m.mat = [[10, -1, 2, 0], [-1, -11, -1, 3], [2, -1, 10, -1], [0, 3, -1, 8]]
-m.b = [6, 25, -11, 15]
-v = Vector(3)
-v.arr = [0, 0, 0]
-jacobi(m, [0, 0, 0, 0], 5)
-gauss_seidel(m, [0, 0, 0, 0], 5)
+m = Matrix(5, 5)
+m.mat = [[1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [1, 0, 1, 0, 0], [1, 1, 0, 1, 0], [0, 1, 1, 0, 1]]
+b = Vector(4)
+b.arr = [1, 0, 0, 0, 1]
+m.augment_with(b)
+
+v = Vector(5)
+v.arr = [0, 0, 0, 0, 0]
+#jacobi(m, v, 0.0000000001, 1)
+#gauss_seidel(m, v, 0.0000000001, 1)
