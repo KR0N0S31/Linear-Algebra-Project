@@ -5,18 +5,11 @@ class Matrix:
     def __init__(self, n, m):
         self.row = n
         self.col = m
-        self.arr = [[0 for y in range(self.col)] for x in range(self.row)]
+        self.mat = [[0 for y in range(self.col)] for x in range(self.row)]
+        self.b   = [0] * self.row
 
     def augment_with(self, b):
-        new_arr = [[0 for y in range(self.col + 1)] for x in range(self.row)]
-        for x in range(self.row):
-            for y in range(self.col + 1):
-                if y == self.col:
-                    new_arr[x][y] = b.arr[x]
-                else:
-                    new_arr[x][y] = self.arr[x][y]
-        self.col += 1
-        self.arr = new_arr
+        self.b = b
 
 class Vector:
     def __init__(self, n):
@@ -46,14 +39,14 @@ class ConvolutionalMatrix:
             for y in range(self.col):
                 # Formula for generating A0
                 if y == jth_pos or y == jth_pos - 2 or y == jth_pos - 3:
-                    A0.arr[x][y] = 1
+                    A0.mat[x][y] = 1
                 else:
-                    A0.arr[x][y] = 0
+                    A0.mat[x][y] = 0
                 # Formula for generating A1
                 if y == jth_pos or y == jth_pos - 1 or y == jth_pos - 3:
-                    A1.arr[x][y] = 1
+                    A1.mat[x][y] = 1
                 else:
-                    A1.arr[x][y] = 0
+                    A1.mat[x][y] = 0
             jth_pos += 1
         y0 = self.multiply_binary_matrix_by_vector(A0, x_stream)
         y1 = self.multiply_binary_matrix_by_vector(A1, x_stream)
@@ -64,7 +57,7 @@ class ConvolutionalMatrix:
         result = Vector(matrix.row)
         for i in range(matrix.row):
             for j in range(vector.row):
-                result.arr[i] += matrix.arr[i][j] * vector.arr[j]
+                result.arr[i] += matrix.mat[i][j] * vector.arr[j]
                 result.arr[i] %= 2
         return result
 
@@ -76,7 +69,25 @@ class ConvolutionalMatrix:
         return y
 
 def jacobi(matrix, initial_guess, tol):
-    return
+    A = matrix.mat
+    b = matrix.b
+    iterations = Vector(matrix.row)
+    xi = 0
+    for k in range(20):
+        for i in range(matrix.row):
+            for j in range(matrix.col):
+                if j == xi:
+                    iterations.arr[i] += b[i] / A[i][xi]
+                    iterations.arr[i] = round(iterations.arr[i], 14)
+                    print(b[i], "/", A[i][xi], "=", iterations.arr[i], "=", b[i] / A[i][xi])
+                else:
+                    iterations.arr[i] += (-A[i][j] * initial_guess[j]) / A[i][xi]
+                    print(-A[i][j], "*", initial_guess[j], "/", A[i][xi], "=", (-A[i][j] * initial_guess[j]) / A[i][xi])
+                    iterations.arr[i] = round(iterations.arr[i], 14)
+            xi = (xi + 1) % matrix.row
+        pprint(iterations.arr)
+        initial_guess = iterations.arr
+        iterations.arr = [0] * matrix.row
 
 def gauss_seidel(matrix, initial_guess, tol):
     return
@@ -86,3 +97,9 @@ x_stream = c.gen_random_x_stream()
 y_stream = c.gen_y_stream(x_stream)
 pprint(y_stream.arr)
 
+m = Matrix(3, 3)
+m.mat = [[101, 21, -1], [11, 8, 3], [-2, -1, 10]]
+m.b = [7, -4, 3]
+v = Vector(3)
+v.arr = [0, 0, 0]
+jacobi(m, [0, 0, 0], 5)
