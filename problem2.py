@@ -129,7 +129,8 @@ def jacobi(matrix, current_guess, tol, decode_binary_stream):
         print("Jacobi solution:", end=" ")
         current_guess.print_as_bits()
     else:
-        print("Iterations using Jacobi: ", num_iteration)
+        print("Jacobi solution:", current_guess.arr)
+    print("Iterations using Jacobi:", num_iteration)
     return num_iteration
         
 def gauss_seidel(matrix, current_guess, tol, decode_binary_stream):
