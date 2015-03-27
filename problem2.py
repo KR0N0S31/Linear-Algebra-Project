@@ -97,8 +97,8 @@ class ConvolutionalMatrix:
         cropped_A0 = self.A0.crop(self.col, self.col)
         cropped_A0.augment_with(cropped_y0)
         v = Vector(self.col)
-        gauss_seidel(cropped_A0, v, 0.0001, 1)
-        jacobi(cropped_A0, v, 0.0001, 1)
+        gauss_seidel(cropped_A0, v, 0.000001, 1)
+        jacobi(cropped_A0, v, 0.000001, 1)
         
 def jacobi(matrix, current_guess, tol, decode_binary_stream):
     A = matrix.mat
@@ -107,7 +107,7 @@ def jacobi(matrix, current_guess, tol, decode_binary_stream):
     xi = 0
     num_iteration = 0
     current_error_tol = float("inf")
-    while (current_error_tol > tol):
+    while (current_error_tol > tol and num_iteration < 100):
         for i in range(matrix.row):
             for j in range(matrix.col):
                 if j == xi:
@@ -125,6 +125,9 @@ def jacobi(matrix, current_guess, tol, decode_binary_stream):
         current_guess.arr = new_guess.arr
         new_guess.arr = [0] * matrix.row
         num_iteration += 1
+    if num_iteration == 100:
+        print("Failed to converge with Jacobi method after 100 iterations. Current solution:", current_guess.arr)
+        return num_iteration
     if decode_binary_stream:
         print("Jacobi solution:", end=" ")
         current_guess.print_as_bits()
@@ -140,7 +143,7 @@ def gauss_seidel(matrix, current_guess, tol, decode_binary_stream):
     xi = 0
     num_iteration = 0
     current_error_tol = float("inf")
-    while (current_error_tol > tol):
+    while (current_error_tol > tol and num_iteration < 100):
         # Current iteration before changes to accurately compute error
         _current_guess = copy.deepcopy(current_guess) 
         for i in range(matrix.row):
@@ -161,6 +164,9 @@ def gauss_seidel(matrix, current_guess, tol, decode_binary_stream):
         current_guess.arr = new_guess.arr
         new_guess.arr = [0] * matrix.row
         num_iteration += 1
+    if num_iteration == 100:
+        print("Failed to converge with Jacobi method after 100 iterations. Current solution:", current_guess.arr)
+        return num_iteration
     if decode_binary_stream:
         print("Gauss-Seidel solution:", end=" ")
         current_guess.print_as_bits()
@@ -192,5 +198,5 @@ m.augment_with(b)
 
 v = Vector(5)
 v.arr = [0, 0, 0, 0, 0]
-#jacobi(m, v, 0.0000000001, 1)
-#gauss_seidel(m, v, 0.0000000001, 1)
+#jacobi(m, v, 0.01, 1)
+#gauss_seidel(m, v, 0.01, 1)
