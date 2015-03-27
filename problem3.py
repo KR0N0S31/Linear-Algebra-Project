@@ -36,8 +36,7 @@ def power_method(A, u0, tol):
     w.arr[0] = 1
     for i in range(5):
         v = A.multiply_by_vector(u0)
-        print(v.arr)
-        print(v.arr[0] / u0.arr[0])
+        current_eigen = v.arr[0] / u0.arr[0]
         u0 = v
 
 A = Matrix(2, 2)
