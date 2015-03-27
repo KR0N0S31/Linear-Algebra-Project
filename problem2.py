@@ -189,7 +189,6 @@ def gauss_seidel(matrix, guess, tol, decode_binary_stream):
     print()
     return num_iteration
         
-
 def get_error_tolerance(new, old):
     # Error defined as ||x^n - x^(n + 1)||
     error = [0] * len(new)
@@ -205,8 +204,7 @@ def print_as_bits(v):
         else:
             print("%d," % v[i], end=" ")
     print("]")
-
-    
+  
 c = ConvolutionalMatrix(n = 5)
 x_stream = c.gen_random_x_stream()
 y_stream = c.gen_y_stream(x_stream)
