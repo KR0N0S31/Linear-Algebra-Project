@@ -79,10 +79,8 @@ def jacobi(matrix, initial_guess, tol):
                 if j == xi:
                     iterations.arr[i] += b[i] / A[i][xi]
                     iterations.arr[i] = round(iterations.arr[i], 14)
-                    print(b[i], "/", A[i][xi], "=", iterations.arr[i], "=", b[i] / A[i][xi])
                 else:
                     iterations.arr[i] += (-A[i][j] * initial_guess[j]) / A[i][xi]
-                    print(-A[i][j], "*", initial_guess[j], "/", A[i][xi], "=", (-A[i][j] * initial_guess[j]) / A[i][xi])
                     iterations.arr[i] = round(iterations.arr[i], 14)
             xi = (xi + 1) % matrix.row
         pprint(iterations.arr)
@@ -90,16 +88,34 @@ def jacobi(matrix, initial_guess, tol):
         iterations.arr = [0] * matrix.row
 
 def gauss_seidel(matrix, initial_guess, tol):
-    return
+    A = matrix.mat
+    b = matrix.b
+    iterations = Vector(matrix.row)
+    xi = 0
+    for k in range(20):
+        for i in range(matrix.row):
+            for j in range(matrix.col):
+                if j == xi:
+                    iterations.arr[i] += b[i] / A[i][xi]
+                    iterations.arr[i] = round(iterations.arr[i], 14)
+                else:
+                    iterations.arr[i] += (-A[i][j] * initial_guess[j]) / A[i][xi]
+                    iterations.arr[i] = round(iterations.arr[i], 14)
+                initial_guess[i] = iterations.arr[i]
+            xi = (xi + 1) % matrix.row
+        pprint(iterations.arr)
+        initial_guess = iterations.arr
+        iterations.arr = [0] * matrix.row
     
 c = ConvolutionalMatrix(n = 5)
 x_stream = c.gen_random_x_stream()
 y_stream = c.gen_y_stream(x_stream)
 pprint(y_stream.arr)
 
-m = Matrix(3, 3)
-m.mat = [[101, 21, -1], [11, 8, 3], [-2, -1, 10]]
-m.b = [7, -4, 3]
+m = Matrix(4, 4)
+m.mat = [[10, -1, 2, 0], [-1, -11, -1, 3], [2, -1, 10, -1], [0, 3, -1, 8]]
+m.b = [6, 25, -11, 15]
 v = Vector(3)
 v.arr = [0, 0, 0]
-jacobi(m, [0, 0, 0], 5)
+jacobi(m, [0, 0, 0, 0], 5)
+gauss_seidel(m, [0, 0, 0, 0], 5)
