@@ -15,9 +15,6 @@ class Matrix:
         self.col = len(self.__mat[0])
 
     def set_b(self, b):
-        if len(b) != self.col:
-            print("Error: b does not have the correct number of entries.")
-            return
         self.__b = b
 
     def get_mat(self):
