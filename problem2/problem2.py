@@ -208,7 +208,7 @@ def print_as_bits(v):
             print("%d," % v[i], end=" ")
     print("]")
   
-c = ConvolutionalMatrix(n = 5)
+c = ConvolutionalMatrix(n = 25)
 x_stream = c.gen_random_x_stream()
 y_stream = c.gen_y_stream(x_stream)
 c.decode_y_stream(y_stream)
