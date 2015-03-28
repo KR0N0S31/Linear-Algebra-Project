@@ -97,14 +97,13 @@ class Matrix:
                 result.arr[i][j] = self.arr[i][j] - other.arr[i][j]
         return result
 
-    def inf_norm(self):
-        norm = float("-inf")
+    def max_norm(self):
+        max_norm = float("-inf")
         for i in range(self.row):
-            curr_sum = 0
             for j in range(self.col):
-                curr_sum += self.arr[i][j]
-            norm = curr_sum if (curr_sum > norm) else norm
-        return norm
+                max_norm = self.arr[i][j] \
+                           if (self.arr[i][j] > max_norm) else max_norm
+        return max_norm
 
     def get_vector_at(self, k):
         v = Vector(self.row)
@@ -187,16 +186,12 @@ def lu_fact(matrix):
         prev_row = curr_row
         curr_row += 1
     print("----------------------LU Decomposition----------------------")
-    print("A = ")
-    matrix.print()
     print("L =")
     L.print()
     print("U =")
     U.print()
-    print("L * U =")
-    L.multiply(U).print()
     error_matrix = L.multiply(U).subtract(matrix)
-    print("\nError = %f" % error_matrix.inf_norm())
+    print("\nError = %.15f" % error_matrix.max_norm())
     print("------------------------------------------------------------\n")
     return L, U
 
@@ -234,16 +229,12 @@ def qr_fact_househ(matrix):
         Q.round()
         R.round()
     print("-----------------------Householder QR-----------------------")
-    print("A =")
-    matrix.print()
     print("Q =")
     Q.print()
     print("R =")
     R.print()
-    print("Q * R =")
-    Q.multiply(R).print()
     error_matrix = Q.multiply(R).subtract(matrix)
-    print("\nError = %f" % error_matrix.inf_norm())
+    print("\nError = %.15f" % error_matrix.max_norm())
     print("------------------------------------------------------------\n")
     return Q, R
 
@@ -271,16 +262,12 @@ def qr_fact_givens(matrix):
             R.round()
         k += 1
     print("------------------------Givens QR---------------------------")
-    print("A =")
-    matrix.print()
     print("Q =")
     Q.print()
     print("R =")
     R.print()
-    print("Q * R =")
-    Q.multiply(R).print()
     error_matrix = Q.multiply(R).subtract(matrix)
-    print("\nError = %f" % error_matrix.inf_norm())
+    print("\nError = %.15f" % error_matrix.max_norm())
     print("------------------------------------------------------------\n")
     return Q, R
     
@@ -289,12 +276,6 @@ def solve_lu_b(original, L, U, b):
     U_sol = U.solve_system_for_triangular_matrix(L_sol)
     print("------------------------------------------------------------")
     print("LU to solve Ax = b for x:")
-    print("A =")
-    original.print()
-    print("b =")
-    print("\t", end="")
-    b.print()
-    print("Result:")
     print("Ly = b:")
     print(" y = ", end="")
     L_sol.print()
@@ -311,12 +292,7 @@ def solve_qr_b(original, Q, R, b, qr_type):
     final_sol = R.solve_system_for_triangular_matrix(Q_transpose_b)
     print("------------------------------------------------------------")
     print("QR with", qr_type, "to solve Ax = b for x:")
-    print("A =")
-    original.print()
-    print("b =")
-    print("\t", end="")
-    b.print()
-    print("\nResult:\nRx = Q^t b")
+    print("Rx = Q^t b")
     print("Rx = ", end="")
     Q_transpose_b.print()
     print("x  = ", end="")
@@ -332,12 +308,20 @@ def hilbert_routine():
         entry = 0.1 ** (n / 3)
         b = Vector(n)
         b.fill(entry)
+        print("============================================================")
+        print("================== HILBERT MATRIX", n, "x", n, "====================")
+        print("============================================================")
         LU = lu_fact(H)
         solve_lu_b(H, LU[0], LU[1], b)
         QR = qr_fact_househ(H)
         solve_qr_b(H, QR[0], QR[1], b, "Householder")
         QR = qr_fact_givens(H)
         solve_qr_b(H, QR[0], QR[1], b, "Givens")
+        print("============================================================")
+        print("================ END HILBERT MATRIX", n, "x", n, "==================")
+        print("============================================================")
+        print()
+        print()
 
 hilbert_routine()
 
