@@ -35,9 +35,10 @@ def power_method(A, u0, tol):
     curr_eigen_vec = [0] * len(u0)
     w = [0] * A.row
     w[0] = 1
-    k = float("-inf")
+    k = 1
+    r = float("-inf")
     i = 0
-    while k < tol:
+    while r ** k <= tol:
         v = A.multiply_by_vector(u0)
         prev_eigen_val = curr_eigen_val
         curr_eigen_val = v[0] / u0[0]
@@ -113,6 +114,7 @@ for i in range(len(x0)):
     
 # Problem 3b    
 compute_leslie_populations(Leslie, x0)
+
 # Problem 3c
 power_method(A = Leslie, u0 = [1, 1, 1, 1, 1, 1, 1, 1, 1], tol = 1)
 
@@ -120,3 +122,4 @@ power_method(A = Leslie, u0 = [1, 1, 1, 1, 1, 1, 1, 1, 1], tol = 1)
 Leslie.get_A()[0][1] /= 2
 compute_leslie_populations(Leslie, x0)
 power_method(A = Leslie, u0 = [1, 1, 1, 1, 1, 1, 1, 1, 1], tol = 1)
+
